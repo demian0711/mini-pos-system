@@ -54,4 +54,22 @@ public class Product {
         this.imageUrl = imageUrl;
         this.active = active;
     }
+
+    public void updateDetails(String sku, String name, String category, BigDecimal price,
+                              Integer stockQuantity, String imageUrl) {
+        this.sku = sku;
+        this.name = name;
+        this.category = category;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.imageUrl = imageUrl;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
+    public void changeStock(int delta) {
+        this.stockQuantity = Math.addExact(this.stockQuantity, delta);
+    }
 }

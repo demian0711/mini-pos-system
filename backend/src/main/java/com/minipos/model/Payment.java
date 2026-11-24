@@ -60,4 +60,8 @@ public class Payment {
         this.paymentStatus = paymentStatus;
         this.paidAt = paidAt;
     }
+
+    public void markRefunded() {
+        this.paymentStatus = PaymentStatus.REFUNDED;
+    }
 }

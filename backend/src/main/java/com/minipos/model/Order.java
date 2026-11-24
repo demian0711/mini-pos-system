@@ -68,4 +68,8 @@ public class Order {
         this.totalAmount = totalAmount;
         this.status = status;
     }
+
+    public void markRefunded() {
+        this.status = OrderStatus.REFUNDED;
+    }
 }

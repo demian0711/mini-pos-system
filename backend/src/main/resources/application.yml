@@ -6,6 +6,10 @@ spring:
     url: "${DB_URL:jdbc:postgresql://127.0.0.1:5432/minipos}"
     username: "${DB_USERNAME:pos_user}"
     password: "${DB_PASSWORD:pos_password}"
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+      fail-on-numbers-for-enums: true
   jpa:
     open-in-view: false
     hibernate:
@@ -14,3 +18,6 @@ spring:
 app:
   cors:
     allowed-origin: "${CORS_ALLOWED_ORIGIN:http://localhost:5173}"
+  jwt:
+    secret: "${JWT_SECRET:}"
+    ttl: "${JWT_TTL:PT8H}"

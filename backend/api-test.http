@@ -1,0 +1,114 @@
+@baseUrl = http://localhost:8080
+
+### Health
+GET {{baseUrl}}/api/health
+
+### Đăng nhập ADMIN (chạy trước các request quản trị)
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123456"
+}
+
+### Đăng nhập CASHIER
+# @name cashierLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "cashier",
+  "password": "123456"
+}
+
+### Danh sách sản phẩm đang bán, lọc danh mục và tìm theo tên hoặc SKU
+GET {{baseUrl}}/api/products?category=%C4%90%E1%BB%93%20u%E1%BB%91ng&search=SP001
+Authorization: Bearer {{cashierLogin.response.body.$.token}}
+
+### Thêm sản phẩm mẫu riêng để kiểm tra checkout
+# @name createProduct
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "sku": "API-TEST-{{$timestamp}}",
+  "name": "Cà phê kiểm thử",
+  "category": "Đồ uống",
+  "price": 25000,
+  "stockQuantity": 20,
+  "imageUrl": null
+}
+
+### Sửa thông tin sản phẩm (chạy trước checkout)
+PUT {{baseUrl}}/api/products/{{createProduct.response.body.$.id}}
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "sku": "{{createProduct.response.body.$.sku}}",
+  "name": "Cà phê sữa kiểm thử",
+  "category": "Đồ uống",
+  "price": 30000,
+  "stockQuantity": 25,
+  "imageUrl": null
+}
+
+### Checkout tiền mặt (VAT 4400, tổng 59400, tiền thối 10600)
+# @name checkout
+POST {{baseUrl}}/api/orders/checkout
+Authorization: Bearer {{cashierLogin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": {{createProduct.response.body.$.id}}, "quantity": 2 }
+  ],
+  "discountAmount": 5000,
+  "paymentMethod": "CASH",
+  "amountPaid": 70000
+}
+
+### Từ chối khi gộp hai dòng cùng sản phẩm vượt tồn kho (409)
+POST {{baseUrl}}/api/orders/checkout
+Authorization: Bearer {{cashierLogin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": {{createProduct.response.body.$.id}}, "quantity": 20 },
+    { "productId": {{createProduct.response.body.$.id}}, "quantity": 20 }
+  ],
+  "paymentMethod": "CASH",
+  "amountPaid": 2000000
+}
+
+### Lịch sử hóa đơn mới nhất trước, ví dụ lọc đơn PAID trả bằng tiền mặt
+GET {{baseUrl}}/api/orders?status=PAID&paymentMethod=CASH
+Authorization: Bearer {{cashierLogin.response.body.$.token}}
+
+### CASHIER không có quyền hoàn tiền (403)
+POST {{baseUrl}}/api/orders/{{checkout.response.body.$.id}}/refund
+Authorization: Bearer {{cashierLogin.response.body.$.token}}
+
+### ADMIN hoàn tiền và cộng lại tồn kho
+POST {{baseUrl}}/api/orders/{{checkout.response.body.$.id}}/refund
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### Hoàn tiền lần nữa bị từ chối (409)
+POST {{baseUrl}}/api/orders/{{checkout.response.body.$.id}}/refund
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### Lịch sử đơn đã hoàn tiền
+GET {{baseUrl}}/api/orders?status=REFUNDED&paymentMethod=CASH
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### Ngừng bán sản phẩm kiểm thử
+DELETE {{baseUrl}}/api/products/{{createProduct.response.body.$.id}}
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### Sản phẩm đã ngừng bán không xuất hiện trong kết quả
+GET {{baseUrl}}/api/products?search={{createProduct.response.body.$.sku}}
+Authorization: Bearer {{cashierLogin.response.body.$.token}}
