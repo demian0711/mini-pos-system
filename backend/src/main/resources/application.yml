@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: mini-pos-backend
+  datasource:
+    # url: "${DB_URL:jdbc:postgresql://localhost:5432/minipos}"
+    url: "${DB_URL:jdbc:postgresql://127.0.0.1:5432/minipos}"
+    username: "${DB_USERNAME:pos_user}"
+    password: "${DB_PASSWORD:pos_password}"
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+
+app:
+  cors:
+    allowed-origin: "${CORS_ALLOWED_ORIGIN:http://localhost:5173}"
