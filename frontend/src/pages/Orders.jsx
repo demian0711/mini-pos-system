@@ -106,19 +106,25 @@ export default function Orders({ isAdmin }) {
         <div className="empty-state"><History size={27} />Không có hóa đơn phù hợp.</div>
       ) : (
         <div className="table-scroll"><table className="data-table">
-          <thead><tr><th>Mã đơn</th><th>Thời gian</th><th>Thu ngân</th><th>Phương thức</th><th>Tổng tiền</th><th>Trạng thái</th></tr></thead>
-          <tbody>{rows.map((row) => <tr key={row.id} className="order-row" onClick={() => setSelected(row)}>
+          <thead><tr><th>Mã đơn</th><th>Thời gian</th><th>Thu ngân</th><th>Phương thức</th><th>Tổng tiền</th><th>Trạng thái</th>{isAdmin && <th>Thao tác</th>}</tr></thead>
+          <tbody>{rows.map((row) => <tr key={row.id} className="order-row" onClick={() => setSelected({ order: row, startRefund: false })}>
             <td><button type="button" className="order-code" aria-label={'Xem chi tiết đơn ' + row.orderCode}>{row.orderCode}</button></td>
             <td>{formatDate(row.createdAt)}</td>
             <td>{row.cashierUsername}</td>
             <td>{paymentNames[row.paymentMethod] || '—'}</td>
             <td><strong>{formatMoney(row.totalAmount)}</strong></td>
             <td><span className={'status-label ' + row.status.toLowerCase()}>{statusNames[row.status]}</span></td>
+            {isAdmin && <td>{row.status === 'PAID' && <button className="button secondary small" type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setSelected({ order: row, startRefund: true })
+              }}><RotateCcw size={14} />Hoàn tiền</button>}</td>}
           </tr>)}</tbody>
         </table></div>
       )}
     </section>
-    {selected && <OrderDetailsModal key={selected.id} order={selected} isAdmin={isAdmin}
+    {selected && <OrderDetailsModal key={selected.order.id} order={selected.order} isAdmin={isAdmin}
+      startRefund={selected.startRefund}
       onClose={() => setSelected(null)} onRefund={applyRefund} />}
   </>
 }

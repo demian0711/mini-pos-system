@@ -4,11 +4,11 @@ import { api, apiError } from '../api'
 import { formatDate, formatMoney, paymentNames, statusNames } from '../format'
 import { Loading, Modal, Notice } from './ui'
 
-export default function OrderDetailsModal({ order, isAdmin, onClose, onRefund }) {
+export default function OrderDetailsModal({ order, isAdmin, startRefund, onClose, onRefund }) {
   const [detail, setDetail] = useState(null)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
-  const [confirming, setConfirming] = useState(false)
+  const [confirming, setConfirming] = useState(startRefund)
   const [refundError, setRefundError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -38,10 +38,12 @@ export default function OrderDetailsModal({ order, isAdmin, onClose, onRefund })
     }
   }
 
+  const showConfirmation = confirming && isAdmin && detail?.status === 'PAID'
+
   return (
-    <Modal title={confirming ? 'Xác nhận hoàn tiền' : 'Chi tiết đơn hàng'} description={order.orderCode}
+    <Modal title={showConfirmation ? 'Xác nhận hoàn tiền' : 'Chi tiết đơn hàng'} description={order.orderCode}
       className="order-detail-dialog" onClose={onClose} locked={busy}>
-      {confirming ? (
+      {showConfirmation ? (
         <form className="dialog-body" onSubmit={refund}>
           <p>Hoàn tiền <strong>{formatMoney(detail.totalAmount)}</strong> và nhập lại tồn kho cho các mặt hàng trong đơn?</p>
           <Notice>{refundError}</Notice>
