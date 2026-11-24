@@ -1,10 +1,12 @@
 package com.minipos.repository;
 
+import com.minipos.dto.OrderStats;
 import com.minipos.dto.OrderSummary;
 import com.minipos.model.Order;
 import com.minipos.model.OrderStatus;
 import com.minipos.model.PaymentMethod;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +30,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             order by o.createdAt desc, o.id desc
             """)
     List<OrderSummary> findHistory(OrderStatus status, PaymentMethod paymentMethod);
+
+    @Query("""
+            select new com.minipos.dto.OrderStats(
+                count(case when o.createdAt >= :startOfDay and o.createdAt < :endOfDay then 1 else null end),
+                coalesce(sum(case when o.status = :paid then o.totalAmount else 0 end), 0),
+                count(case when o.status = :refunded then 1 else null end))
+            from Order o
+            """)
+    OrderStats getStats(Instant startOfDay, Instant endOfDay, OrderStatus paid, OrderStatus refunded);
 }

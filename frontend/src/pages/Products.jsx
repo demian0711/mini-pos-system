@@ -88,7 +88,7 @@ export default function Products() {
 
   return <>
     <div className="page-heading"><div><h1>Quản lý sản phẩm</h1><p>Thêm, sửa và cập nhật tồn kho sản phẩm đang bán.</p></div>
-      <button className="button primary" type="button" onClick={() => openEditor()}><Plus size={18} />Thêm sản phẩm</button>
+      <button className="button primary" type="button" onClick={() => openEditor()}><Plus size={18} />Thêm sản phẩm mới</button>
     </div>
     <section className="table-panel">
       <div className="table-toolbar"><div className="search-form table-search"><Search size={19} /><input aria-label="Tìm sản phẩm" placeholder="Tìm tên, SKU hoặc danh mục..." value={query} onChange={(event) => setQuery(event.target.value)} /></div></div>
@@ -97,10 +97,14 @@ export default function Products() {
           <thead><tr><th>Sản phẩm</th><th>Mã SKU</th><th>Danh mục</th><th>Giá bán</th><th>Tồn kho</th><th>Thao tác</th></tr></thead>
           <tbody>{filtered.map((product) => <tr key={product.id}>
             <td><span className="product-table-name"><ProductArt product={product} /><strong>{product.name}</strong></span></td><td>{product.sku}</td><td>{product.category}</td>
-            <td><strong>{formatMoney(product.price)}</strong></td><td>{product.stockQuantity}</td>
+            <td><strong>{formatMoney(product.price)}</strong></td><td>{product.stockQuantity < 10
+              ? <strong className="stock-low" title="Tồn kho dưới 10">{product.stockQuantity}</strong>
+              : product.stockQuantity}</td>
             <td><div className="flex gap-2">
-              <button className="icon-button" type="button" aria-label={'Sửa ' + product.name} onClick={() => openEditor(product)}><Pencil size={17} /></button>
-              <button className="icon-button" type="button" aria-label={'Ngừng bán ' + product.name} onClick={() => { setMutationError(''); setDeleting(product) }}><Trash2 size={17} /></button>
+              <button className="button secondary small" type="button" aria-label={'Sửa ' + product.name}
+                onClick={() => openEditor(product)}><Pencil size={14} />Sửa</button>
+              <button className="button secondary small" type="button" aria-label={'Ngừng bán ' + product.name}
+                onClick={() => { setMutationError(''); setDeleting(product) }}><Trash2 size={14} />Ngừng bán</button>
             </div></td>
           </tr>)}</tbody>
         </table></div>}

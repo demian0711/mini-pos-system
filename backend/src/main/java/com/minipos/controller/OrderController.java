@@ -2,6 +2,7 @@ package com.minipos.controller;
 
 import com.minipos.dto.CheckoutRequest;
 import com.minipos.dto.OrderResponse;
+import com.minipos.dto.OrderStats;
 import com.minipos.dto.OrderSummary;
 import com.minipos.model.OrderStatus;
 import com.minipos.model.PaymentMethod;
@@ -36,6 +37,16 @@ public class OrderController {
     public List<OrderSummary> history(@RequestParam(required = false) OrderStatus status,
                                       @RequestParam(required = false) PaymentMethod paymentMethod) {
         return orderService.history(status, paymentMethod);
+    }
+
+    @GetMapping("/stats")
+    public OrderStats stats() {
+        return orderService.stats();
+    }
+
+    @GetMapping("/{id}")
+    public OrderResponse detail(@PathVariable Long id) {
+        return orderService.detail(id);
     }
 
     @PostMapping("/{id}/refund")

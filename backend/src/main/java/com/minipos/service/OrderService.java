@@ -2,6 +2,7 @@ package com.minipos.service;
 
 import com.minipos.dto.CheckoutRequest;
 import com.minipos.dto.OrderResponse;
+import com.minipos.dto.OrderStats;
 import com.minipos.dto.OrderSummary;
 import com.minipos.exception.ApiException;
 import com.minipos.model.Order;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -104,12 +106,25 @@ public class OrderService {
         return orders.findHistory(status, paymentMethod);
     }
 
+    @Transactional(readOnly = true)
+    public OrderStats stats() {
+        LocalDate today = LocalDate.now(STORE_ZONE);
+        Instant start = today.atStartOfDay(STORE_ZONE).toInstant();
+        Instant end = today.plusDays(1).atStartOfDay(STORE_ZONE).toInstant();
+        return orders.getStats(start, end, OrderStatus.PAID, OrderStatus.REFUNDED);
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public OrderResponse detail(Long id) {
+        Order order = orders.findById(id).orElseThrow(() -> orderNotFound(id));
+        return toResponse(order, orderItems.findByOrderIdOrderByIdAsc(id),
+                payments.findByOrderId(id).orElse(null));
+    }
+
     @Transactional
     public OrderResponse refund(Long id) {
         // Khóa đơn trước khi kiểm tra trạng thái để mỗi đơn chỉ hoàn tồn kho một lần.
-        Order order = orders.findForUpdate(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND",
-                        "Không tìm thấy hóa đơn " + id + "."));
+        Order order = orders.findForUpdate(id).orElseThrow(() -> orderNotFound(id));
         if (order.getStatus() != OrderStatus.PAID) {
             throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_REFUNDABLE",
                     "Chỉ có thể hoàn tiền cho đơn đang ở trạng thái PAID.");
@@ -138,6 +153,10 @@ public class OrderService {
         order.markRefunded();
         payment.markRefunded();
         return toResponse(order, items, payment);
+    }
+
+    private ApiException orderNotFound(Long id) {
+        return new ApiException(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "Không tìm thấy hóa đơn " + id + ".");
     }
 
     private SaleLine prepareLine(Product product, Long productId, long quantity) {
@@ -175,8 +194,9 @@ public class OrderService {
         var cashierResponse = new OrderResponse.Cashier(cashier.getId(), cashier.getUsername(), cashier.getFullName());
         var lineResponses = items.stream().map(item -> new OrderResponse.Item(item.getProduct().getId(),
                 item.getProductName(), item.getQuantity(), item.getUnitPrice(), item.getLineTotal())).toList();
-        var paymentResponse = new OrderResponse.Payment(payment.getPaymentMethod(), payment.getAmountPaid(),
-                payment.getChangeAmount(), payment.getPaymentStatus(), payment.getPaidAt());
+        var paymentResponse = payment == null ? null : new OrderResponse.Payment(
+                payment.getPaymentMethod(), payment.getAmountPaid(), payment.getChangeAmount(),
+                payment.getPaymentStatus(), payment.getPaidAt());
         return new OrderResponse(order.getId(), order.getOrderCode(), cashierResponse, order.getSubtotal(),
                 order.getDiscountAmount(), order.getTaxAmount(), order.getTotalAmount(), order.getStatus(),
                 order.getCreatedAt(), lineResponses, paymentResponse);
