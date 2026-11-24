@@ -16,7 +16,7 @@
 | `products` | `id`, `sku`, `name`, `unit_price`, `stock_quantity`, `active` | `sku` duy nhất. Giá và tồn kho không âm. |
 | `orders` | `id`, `cashier_id`, `status`, `total_amount`, `created_at` | `cashier_id` tham chiếu `users.id`. Mỗi đơn do một thu ngân tạo. |
 | `order_items` | `id`, `order_id`, `product_id`, `quantity`, `unit_price` | Tham chiếu `orders.id` và `products.id`. Số lượng lớn hơn 0. Lưu đơn giá tại thời điểm bán. |
-| `payments` | `id`, `order_id`, `method`, `status`, `amount`, `transaction_reference`, `created_at` | `order_id` tham chiếu `orders.id`. Một đơn có thể có nhiều bản ghi thanh toán. |
+| `payments` | `id`, `order_id`, `method`, `status`, `amount`, `transaction_reference`, `created_at` | Quan hệ `OneToOne` với `orders`. `order_id` là khóa ngoại bắt buộc (`NOT NULL`) tham chiếu `orders.id` và có ràng buộc `UNIQUE`. Mỗi đơn có tối đa một bản ghi thanh toán. |
 
 Giai đoạn này mô tả schema. Entity và bảng nghiệp vụ sẽ được triển khai cùng tính năng tương ứng.
 
